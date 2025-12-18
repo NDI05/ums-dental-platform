@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
             where: {
                 role: 'STUDENT', // Only students in leaderboard
             },
-            take: 20,
+            take: 10, // Optimized for Free Tier (Top 10 only)
             orderBy: {
                 totalPoints: 'desc',
             },

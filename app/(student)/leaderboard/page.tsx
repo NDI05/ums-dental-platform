@@ -44,6 +44,36 @@ export default function LeaderboardPage() {
         };
 
         fetchLeaderboard();
+
+        // Realtime Subscription (Deep Optimization: Only subscribe when mounted)
+        // We import the singleton client to avoid multiple instances
+        const { supabase } = require('@/lib/supabase');
+
+        const channel = supabase
+            .channel('leaderboard-updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT', // Only listen for new scores (INSERT into QuizAttempt)
+                    schema: 'public',
+                    table: 'QuizAttempt',
+                },
+                (payload: any) => {
+                    // Optimized: When a new score comes in, re-fetch the simplified Top 10 list
+                    // We don't need to process the payload because ranking changes are complex.
+                    // A simple re-fetch of the lightweight API is safer and accurate.
+                    console.log('New high score detected! Refreshing leaderboard...');
+                    fetchLeaderboard();
+                }
+            )
+            .subscribe();
+
+        // Cleanup: Strictly unsubscribe to save Free Tier connection limits
+        return () => {
+            console.log('Unsubscribing from Realtime Leaderboard...');
+            supabase.removeChannel(channel);
+        };
+
     }, [user?.id]);
 
     const topThree = leaderboardData.slice(0, 3);
