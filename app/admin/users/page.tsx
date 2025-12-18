@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/auth';
+import { apiFetch } from '@/lib/api-client';
 
 // Metadata removed
 
@@ -28,11 +29,7 @@ export default function UsersPage() {
             }
             params.append('limit', '100'); // Fetch more to ensure we get staff
 
-            const res = await fetch(`/api/users?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
+            const res = await apiFetch(`/api/users?${params.toString()}`);
             const data = await res.json();
             if (data.success) {
                 let filtered = data.data.data;

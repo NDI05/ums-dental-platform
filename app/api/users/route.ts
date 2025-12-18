@@ -10,13 +10,21 @@ export async function GET(request: NextRequest) {
         // Use helper to get token from header OR cookie
         const token = getTokenFromRequest(request);
 
+        console.log('[API/Users] Token extraction result:', token ? 'Found' : 'Missing');
+        if (token) {
+            console.log('[API/Users] Token source:', request.headers.get('authorization') ? 'Header' : 'Cookie');
+        }
+
         if (!token) {
+            console.log('[API/Users] 401: No token found in request');
             return unauthorizedResponse('Token tidak ditemukan');
         }
 
         const decoded = verifyToken(token);
+        console.log('[API/Users] Verification result:', decoded ? 'Valid' : 'Invalid');
 
         if (!decoded) {
+            console.log('[API/Users] 401: Token verification failed');
             return unauthorizedResponse('Token tidak valid atau expired');
         }
 

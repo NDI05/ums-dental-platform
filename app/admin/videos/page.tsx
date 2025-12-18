@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { useState, useEffect } from 'react';
 import DeleteModal from '@/components/admin/delete-modal';
 import { useAuthStore } from '@/lib/store/auth';
+import { apiFetch } from '@/lib/api-client';
 
 // Metadata removed
 
@@ -45,11 +46,9 @@ export default function AdminVideosPage() {
             // This means admins CANNOT see drafts. This is a BUG in the API for Admin use.
             // I should fix the API first.
 
-            const res = await fetch(`/api/videos?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
+            // I should fix the API first.
+
+            const res = await apiFetch(`/api/videos?${params.toString()}`);
             const data = await res.json();
             if (data.success) {
                 setVideos(data.data.data);
@@ -76,9 +75,8 @@ export default function AdminVideosPage() {
         if (!selectedVideoId) return;
         setIsDeleting(true);
         try {
-            const res = await fetch(`/api/videos/${selectedVideoId}`, {
+            const res = await apiFetch(`/api/videos/${selectedVideoId}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${accessToken}` }
             });
 
             if (res.ok) {

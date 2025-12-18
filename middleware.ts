@@ -71,7 +71,7 @@ export async function middleware(request: NextRequest) {
         }
 
         try {
-            const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'supersecretkey');
+            const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
             await jwtVerify(token, secret);
             return NextResponse.next();
         } catch (error) {
@@ -91,7 +91,7 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'supersecretkey');
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
         await jwtVerify(token, secret);
         return NextResponse.next();
     } catch (error) {
