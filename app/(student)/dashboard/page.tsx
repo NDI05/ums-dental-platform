@@ -34,7 +34,7 @@ export default function DashboardPage() {
                 // Add timestamp to prevent caching
                 const res = await apiFetch(`/api/student/dashboard?t=${Date.now()}`);
                 const json = await res.json();
-                console.log('Dashboard Response:', json);
+
                 if (json.success) {
                     setData(json.data);
                 } else {

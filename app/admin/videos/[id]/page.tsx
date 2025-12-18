@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation'; // Added for mock ID usage if needed
+
 import { ArrowLeft, Save, Youtube, MonitorPlay, AlertCircle, Plus, X, Loader2, Trash } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';

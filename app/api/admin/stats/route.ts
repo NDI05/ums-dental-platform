@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
 
         // If no quiz data, provide defaults or empty
         if (quizPerformance.length === 0) {
-            // Optional: keep empty or mock for structure
+            // Optional: keep empty
         }
 
         const stats = {

@@ -8,42 +8,11 @@ import { useState, useEffect } from 'react';
 import { StudentBackground } from '@/components/layout/student-background';
 import { apiFetch } from '@/lib/api-client';
 
-// Fallback Mock Data (in case API is empty)
-const MOCK_COMICS = [
-    {
-        id: '1',
-        title: 'Petualangan Gigi Sehat',
-        coverUrl: '/images/hero-character.png',
-        category: 'Edukasi',
-        totalPages: 12,
-        isPublished: true,
-        _count: { reads: 340 }
-    },
-    {
-        id: '2',
-        title: 'Melawan Monster Karies',
-        coverUrl: '/images/mascot-boy.png',
-        category: 'Cerita Seru',
-        totalPages: 15,
-        isPublished: true,
-        _count: { reads: 520 }
-    },
-    {
-        id: '3',
-        title: 'Kenapa Gusi Berdarah?',
-        coverUrl: '/images/mascot-girl.png',
-        category: 'Sains',
-        totalPages: 8,
-        isPublished: true,
-        _count: { reads: 120 }
-    },
-];
-
 const CATEGORIES = ['Semua', 'Cerita Seru', 'Edukasi', 'Sains', 'Misteri'];
 
 export default function StudentComicsPage() {
     const [activeCategory, setActiveCategory] = useState('Semua');
-    const [comics, setComics] = useState<any[]>(MOCK_COMICS);
+    const [comics, setComics] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -57,7 +26,7 @@ export default function StudentComicsPage() {
                     setComics(data.data.data);
                 }
             } catch (error) {
-                console.error("Failed to fetch comics, using mock", error);
+                console.error("Failed to fetch comics", error);
             } finally {
                 setIsLoading(false);
             }

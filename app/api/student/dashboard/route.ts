@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
                     });
                 });
 
-                // Update local constraints to reflect the change (mocking the return type structure roughly)
+                // Update local constraints to reflect the change
                 // @ts-ignore - simplified for brevity, we just need it to be truthy and have basic fields if used later
                 dailyLogin = { id: 'temp', userId, activityType: 'DAILY_LOGIN', pointsEarned: points, description: 'Login Harian', createdAt: new Date() };
                 user.totalPoints += points;
