@@ -9,6 +9,8 @@ import useSWR from 'swr';
 import { StudentBackground } from '@/components/layout/student-background';
 import { apiFetch } from '@/lib/api-client';
 
+
+
 const CATEGORIES = ['Semua', 'Cerita Seru', 'Edukasi', 'Sains', 'Misteri'];
 
 const fetcher = (url: string) => apiFetch(url).then((res) => res.json());
@@ -30,6 +32,7 @@ export default function StudentComicsPage() {
 
     const { data: apiData, isLoading } = useSWR('/api/comics?limit=20', fetcher, {
         revalidateOnFocus: false,
+        dedupingInterval: 10000, // 10 seconds deduping
     });
 
     const comics: Comic[] = apiData?.success ? apiData.data.data : [];

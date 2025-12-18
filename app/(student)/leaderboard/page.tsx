@@ -9,6 +9,9 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/auth';
 import { apiFetch } from '@/lib/api-client';
 
+// Module-scope throttling variable
+let lastLeaderboardUpdate = 0;
+
 interface LeaderboardUser {
     rank: number;
     id: string;
@@ -59,9 +62,16 @@ export default function LeaderboardPage() {
                     table: 'QuizAttempt',
                 },
                 (payload: any) => {
-                    // Optimized: When a new score comes in, re-fetch the simplified Top 10 list
-                    // We don't need to process the payload because ranking changes are complex.
-                    // A simple re-fetch of the lightweight API is safer and accurate.
+                    // Throttling: Limit updates to once every 3 seconds
+                    const now = Date.now();
+                    // We use a broader scope variable or a ref if inside component, 
+                    // but here we can check window/global or use a simple throttle flag in useEffect scope.
+                    // However, for simplicity inside this callback:
+                    if (now - lastLeaderboardUpdate < 3000) {
+                        return;
+                    }
+                    lastLeaderboardUpdate = now;
+
                     console.log('New high score detected! Refreshing leaderboard...');
                     fetchLeaderboard();
                 }

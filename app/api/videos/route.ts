@@ -78,10 +78,18 @@ export async function GET(request: NextRequest) {
                     skip,
                     take: limit,
                     orderBy: { [sortBy as string]: order },
-                    include: { // Include creator info for Admin maybe?
+                    select: {
+                        id: true,
+                        title: true,
+                        description: true,
+                        thumbnailUrl: true,
+                        youtubeId: true,
+                        category: true,
+                        createdAt: true,
+                        isPublished: true,
+                        // Exclude keyPoints (heavy JSON) for list view
                         createdBy: isAdmin ? { select: { username: true } } : false
                     },
-                    /* select: { ... } - using default selection or include for now to get isPublished status */
                 }),
                 prisma.video.count({ where }),
             ]);
@@ -96,7 +104,11 @@ export async function GET(request: NextRequest) {
                         totalPages: Math.ceil(total / limit),
                     },
                 },
-                'Berhasil mengambil daftar video'
+                'Berhasil mengambil daftar video',
+                200,
+                {
+                    'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=59'
+                }
             );
         } catch (error) {
             if (error instanceof z.ZodError) {

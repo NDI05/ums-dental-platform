@@ -84,7 +84,11 @@ export async function GET(request: NextRequest) {
                         totalPages: Math.ceil(total / limit),
                     },
                 },
-                'Berhasil mengambil daftar kuis'
+                'Berhasil mengambil daftar kuis',
+                200,
+                {
+                    'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=59'
+                }
             );
         } catch (error) {
             if (error instanceof z.ZodError) {

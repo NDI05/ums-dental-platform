@@ -1,9 +1,12 @@
-export const successResponse = (data: unknown, message: string = 'Success', statusCode: number = 200) => {
+export const successResponse = (data: unknown, message: string = 'Success', statusCode: number = 200, headers: Record<string, string> = {}) => {
     return Response.json({
         success: true,
         message,
         data,
-    }, { status: statusCode });
+    }, {
+        status: statusCode,
+        headers
+    });
 };
 
 export const errorResponse = (message: string = 'Internal Server Error', errorType: string = 'INTERNAL_SERVER_ERROR', error: unknown = null, statusCode: number = 500) => {

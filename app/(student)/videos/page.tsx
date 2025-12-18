@@ -34,6 +34,7 @@ export default function VideosPage() {
 
     const { data: apiData, isLoading } = useSWR('/api/videos?limit=50', fetcher, {
         revalidateOnFocus: false,
+        dedupingInterval: 10000, // 10 seconds
     });
 
     const videos: Video[] = apiData?.success && Array.isArray(apiData.data.data) ? apiData.data.data : [];
