@@ -434,27 +434,5 @@ model ActivityLog {
 }
 
 // ============================================================
-// SYSTEM SETTINGS
+// END OF SCHEMA
 // ============================================================
-
-model Setting {
-  id    String @id @default(cuid())
-  key   String @unique
-  value String @db.Text
-  
-  updatedAt DateTime @updatedAt
-}
-
-
-// ============================================================
-// CLASS MANAGEMENT
-// ============================================================
-
-model SchoolClass {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@map("classes") // Keep the table name as 'classes' or let it be 'SchoolClass' (default)
-}
