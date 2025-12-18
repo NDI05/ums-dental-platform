@@ -85,7 +85,7 @@ export async function middleware(request: NextRequest) {
 
     if (!token) {
         // Redirect to login if no token found on protected page
-        const loginUrl = new URL('/login', request.url);
+        const loginUrl = new URL('/auth/login', request.url);
         // Optional: Add ?next=pathname to redirect back after login
         return NextResponse.redirect(loginUrl);
     }
@@ -96,7 +96,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     } catch (error) {
         // Token invalid/expired -> Redirect to login
-        const loginUrl = new URL('/login', request.url);
+        const loginUrl = new URL('/auth/login', request.url);
         return NextResponse.redirect(loginUrl);
     }
 

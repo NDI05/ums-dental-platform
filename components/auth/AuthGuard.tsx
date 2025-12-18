@@ -27,7 +27,7 @@ export default function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
                     if (isExpired) {
                         console.log('Token expired, logging out...');
                         logout();
-                        router.push('/login');
+                        router.push('/auth/login');
                         return;
                     }
 
@@ -95,7 +95,7 @@ export default function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
             console.log('No session found. Redirecting to login.');
             // Only redirect if we are truly not authorized
             logout();
-            router.push('/login');
+            router.push('/auth/login');
         };
 
         checkAuth();

@@ -28,8 +28,8 @@ export async function apiFetch(url: string, options: ApiFetchOptions = {}) {
             logout(); // Clear state
 
             // Redirect to login if not already there
-            if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-                window.location.href = '/login';
+            if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/login')) {
+                window.location.href = '/auth/login';
             }
 
             throw new Error('Session expired');
