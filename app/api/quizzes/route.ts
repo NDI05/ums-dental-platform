@@ -62,10 +62,13 @@ export async function GET(request: NextRequest) {
                         category: true,
                         difficulty: true,
                         createdAt: true,
-                        answer: true, // Exposed for immediate feedback (Client-side validation)
-                        explanation: true, // Educational feedback
-                        // Wait, the schema in seed.ts was simpler. Let's check what fields are available.
-                        // Based on previous file view, only simple fields. I will stick to what's verified.
+                        // answer: true, // EXCLUDED FOR SECURITY (Deep Optimization)
+                        // explanation: true, // EXCLUDED FOR SECURITY
+                        // Only send what's needed for the card/list
+                        // For gameplay, individual fetch or "start" might fetch details? 
+                        // Actually, play page fetches list. We need to be careful.
+                        // If PlayPage fetches this list to play, it NEEDS questions but NOT answers.
+                        // We will rely on server validation for answers.
                     },
                 }),
                 prisma.quiz.count({ where }),
