@@ -77,7 +77,8 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, ...userWithoutPassword } = user;
 
-        return NextResponse.json({
+        // Create response with user data
+        const response = NextResponse.json({
             success: true,
             data: {
                 user: userWithoutPassword,
@@ -87,6 +88,19 @@ export async function POST(request: NextRequest) {
                 },
             },
         });
+
+        // Set HTTP-only cookie for Edge Middleware
+        response.cookies.set({
+            name: 'token',
+            value: accessToken,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60, // 7 days
+        });
+
+        return response;
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(

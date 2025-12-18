@@ -25,7 +25,14 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             accessToken: null,
             setAuth: (user, token) => set({ user, accessToken: token }),
-            logout: () => set({ user: null, accessToken: null }),
+            logout: async () => {
+                try {
+                    await fetch('/api/auth/logout', { method: 'POST' });
+                } catch (error) {
+                    console.error('Logout failed', error);
+                }
+                set({ user: null, accessToken: null });
+            },
             isAuthenticated: () => !!get().accessToken,
         }),
         {

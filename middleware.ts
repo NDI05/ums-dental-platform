@@ -51,14 +51,25 @@ export async function middleware(request: NextRequest) {
     // Let's implement header check for APIs.
 
     if (pathname.startsWith('/api/')) {
+        let token = '';
         const authHeader = request.headers.get('authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        } else {
+            // Fallback to cookie for APIs if header missing
+            const cookieToken = request.cookies.get('token')?.value;
+            if (cookieToken) {
+                token = cookieToken;
+            }
+        }
+
+        if (!token) {
             // Allow public APIs (like login/register)
-            if (pathname.startsWith('/api/auth')) return NextResponse.next();
+            if (request.nextUrl.pathname.startsWith('/api/auth')) return NextResponse.next();
             return NextResponse.json({ success: false, message: 'Unauthorized (Edge)' }, { status: 401 });
         }
 
-        const token = authHeader.split(' ')[1];
         try {
             const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'supersecretkey');
             await jwtVerify(token, secret);
@@ -66,6 +77,27 @@ export async function middleware(request: NextRequest) {
         } catch (error) {
             return NextResponse.json({ success: false, message: 'Invalid Token (Edge)' }, { status: 401 });
         }
+    }
+
+    // 3. For Page Routes (Dashboard, etc.) - Check Cookie
+    // Now that we rely on Cookies, we can actually protect pages!
+    const token = request.cookies.get('token')?.value;
+
+    if (!token) {
+        // Redirect to login if no token found on protected page
+        const loginUrl = new URL('/login', request.url);
+        // Optional: Add ?next=pathname to redirect back after login
+        return NextResponse.redirect(loginUrl);
+    }
+
+    try {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'supersecretkey');
+        await jwtVerify(token, secret);
+        return NextResponse.next();
+    } catch (error) {
+        // Token invalid/expired -> Redirect to login
+        const loginUrl = new URL('/login', request.url);
+        return NextResponse.redirect(loginUrl);
     }
 
     return NextResponse.next();

@@ -1,10 +1,19 @@
-import { successResponse } from '@/lib/api-response';
+import { NextResponse } from 'next/server';
 
-// For now, logout is handled client-side by removing the token
-// In future, we can implement token blacklisting if needed
 export async function POST() {
-    // Optional: Add token to blacklist in Redis/Database
-    // For MVP, client-side token removal is sufficient
+    const response = NextResponse.json({
+        success: true,
+        message: 'Logged out successfully',
+    });
 
-    return successResponse(null, 'Logout berhasil');
+    // Clear the token cookie
+    response.cookies.set({
+        name: 'token',
+        value: '',
+        httpOnly: true,
+        expires: new Date(0),
+        path: '/',
+    });
+
+    return response;
 }
