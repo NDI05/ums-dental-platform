@@ -1,0 +1,467 @@
+// UMS Dental Education Platform - Database Schema
+// Auto-generated Prisma Client will be in node_modules/.prisma/client
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USER MANAGEMENT
+// ============================================================
+
+enum UserRole {
+  STUDENT
+  CONTENT_MANAGER
+  SUPER_ADMIN
+  TEACHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String   @unique
+  password  String   // Hashed with bcrypt
+  role      UserRole @default(STUDENT)
+  
+  // Student-specific fields
+  kelas     String?  // Grade level (e.g., "1A", "2B", "3C")
+  avatarUrl String?
+  
+  // Gamification
+  totalPoints Int @default(0)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Email verification (optional)
+  isEmailVerified Boolean @default(false)
+  emailVerifiedAt DateTime?
+  
+  // Account status
+  isBlocked Boolean @default(false)
+  
+  // Relations
+  videoViews        VideoView[]
+  quizAttempts      QuizAttempt[]
+  comicReads        ComicRead[]
+  gameClicks        GameClick[]
+  pointTransactions PointTransaction[]
+
+  activityLogs      ActivityLog[]
+  quizSessions      QuizSessionParticipant[]
+  
+  // Admin activities
+  videosCreated     Video[]     @relation("VideoCreatedBy")
+  quizzesCreated    Quiz[]      @relation("QuizCreatedBy")
+  comicsCreated     Comic[]     @relation("ComicCreatedBy")
+  gamesCreated      MiniGame[]  @relation("MiniGameCreatedBy")
+  
+  @@index([email])
+  @@index([username])
+  @@index([totalPoints])
+}
+
+// ============================================================
+// VIDEO EDUCATION
+// ============================================================
+
+model Video {
+  id          String   @id @default(cuid())
+  youtubeId   String   @unique
+  title       String
+  description String   @db.Text
+  keyPoints   String[] // Array of key points
+  category    String?
+  thumbnailUrl String?  // YouTube thumbnail or custom
+  
+  // Publishing
+  isPublished Boolean  @default(false)
+  publishedAt DateTime?
+  
+  // Analytics
+  viewCount   Int      @default(0)
+  
+  // Metadata
+  createdById String
+  createdBy   User     @relation("VideoCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  views       VideoView[]
+  
+  @@index([category])
+  @@index([isPublished])
+}
+
+model VideoView {
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   String
+  
+  // Tracking
+  watchedAt DateTime @default(now())
+  completed Boolean  @default(false) // Did user watch to the end?
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@index([videoId])
+}
+
+// ============================================================
+// QUIZ SYSTEM
+// ============================================================
+
+enum QuizDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+// Quiz System
+model QuizCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  quizzes     Quiz[]
+}
+
+model Quiz {
+  id          String          @id @default(cuid())
+  question    String          @db.Text
+  answer      Boolean         // True = Benar, False = Salah
+  explanation String          @db.Text
+  
+  // Categorization
+  category    String?         // Deprecated: use categoryRef instead
+  difficulty  QuizDifficulty? @default(EASY)
+  
+  // Dynamic Category
+  categoryId  String?
+  categoryRef QuizCategory?   @relation(fields: [categoryId], references: [id])
+  
+  // Status
+  isActive    Boolean         @default(true)
+  
+  // Metadata
+  createdById String
+  createdBy   User            @relation("QuizCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  // Relations
+  attemptAnswers QuizAttemptAnswer[]
+  sessionQuestions QuizSessionQuestion[]
+  
+  @@index([category])
+  @@index([difficulty])
+  @@index([isActive])
+}
+
+model QuizAttempt {
+  id              String   @id @default(cuid())
+  userId          String
+  
+  // Scoring
+  totalQuestions  Int      @default(10)
+  correctAnswers  Int
+  score           Int      // Calculated: (correctAnswers / totalQuestions) * 100
+  pointsEarned    Int      // 50 base + (10 * correctAnswers)
+  
+  // Timestamp
+  completedAt     DateTime @default(now())
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  answers         QuizAttemptAnswer[]
+  
+  @@index([userId])
+  @@index([completedAt])
+}
+
+model QuizAttemptAnswer {
+  id          String      @id @default(cuid())
+  attemptId   String
+  quizId      String
+  userAnswer  Boolean
+  isCorrect   Boolean
+  
+  attempt     QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  quiz        Quiz        @relation(fields: [quizId], references: [id])
+  
+  @@index([attemptId])
+}
+
+// ============================================================
+// LIVE QUIZ SESSION (Quizizz-like)
+// ============================================================
+
+enum QuizSessionStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+}
+
+model QuizSession {
+  id               String            @id @default(cuid())
+  code             String            @unique // e.g. "X7B129"
+  title            String
+  status           QuizSessionStatus @default(WAITING)
+  
+  // Settings
+  timerPerQuestion Int               @default(30) // seconds
+  isShuffled       Boolean           @default(false)
+  
+  // Host
+  hostId           String
+  
+  // Relations
+  participants     QuizSessionParticipant[]
+  questions        QuizSessionQuestion[]
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  @@index([code])
+  @@index([status])
+}
+
+model QuizSessionParticipant {
+  id        String      @id @default(cuid())
+  sessionId String
+  userId    String
+  username  String      // Snapshot of username (or guest name)
+  
+  score     Int         @default(0)
+  status    String      @default("JOINED") // JOINED, PLAYING, FINISHED
+  
+  session   QuizSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime    @default(now())
+  
+  @@unique([sessionId, userId])
+}
+
+model QuizSessionQuestion {
+  id        String      @id @default(cuid())
+  sessionId String
+  quizId    String
+  order     Int         @default(0)
+  
+  session   QuizSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  quiz      Quiz        @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  
+  @@index([sessionId])
+}
+
+// ============================================================
+// COMIC / E-BOOK
+// ============================================================
+
+model Comic {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  coverUrl    String   // Cover image URL
+  pages       String[] // Array of page image URLs
+  totalPages  Int
+  
+  // Categorization
+  category    String?
+  tags        String[]
+  
+  // Publishing
+  isPublished Boolean  @default(false)
+  publishedAt DateTime?
+  
+  // Analytics
+  readCount   Int      @default(0)
+  
+  // Metadata
+  createdById String
+  createdBy   User     @relation("ComicCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  reads       ComicRead[]
+  
+  @@index([category])
+  @@index([isPublished])
+}
+
+model ComicRead {
+  id          String   @id @default(cuid())
+  userId      String
+  comicId     String
+  
+  // Tracking
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  completed   Boolean  @default(false)
+  lastPage    Int      @default(0) // Track reading progress
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comic       Comic    @relation(fields: [comicId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, comicId])
+  @@index([userId])
+  @@index([comicId])
+}
+
+// ============================================================
+// MINI GAMES
+// ============================================================
+
+enum GameDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model MiniGame {
+  id           String          @id @default(cuid())
+  title        String
+  description  String          @db.Text
+  thumbnailUrl String
+  gameUrl      String          // External game URL
+  
+  // Categorization
+  category     String?
+  difficulty   GameDifficulty? @default(EASY)
+  
+  // Publishing
+  isPublished  Boolean         @default(false)
+  publishedAt  DateTime?
+  
+  // Analytics
+  clickCount   Int             @default(0)
+  
+  // Display order
+  sortOrder    Int             @default(0)
+  
+  // Metadata
+  createdById  String
+  createdBy    User            @relation("MiniGameCreatedBy", fields: [createdById], references: [id])
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  // Relations
+  clicks       GameClick[]
+  
+  @@index([category])
+  @@index([isPublished])
+  @@index([sortOrder])
+}
+
+model GameClick {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String
+  
+  clickedAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      MiniGame @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([gameId])
+}
+
+// ============================================================
+// GAMIFICATION: POINTS & ACHIEVEMENTS
+// ============================================================
+
+enum ActivityType {
+  VIDEO_WATCHED
+  QUIZ_COMPLETED
+  COMIC_READ
+  GAME_PLAYED
+  DAILY_LOGIN
+  MANUAL_ADJUSTMENT // Admin can manually adjust points
+}
+
+model PointTransaction {
+  id           String       @id @default(cuid())
+  userId       String
+  activityType ActivityType
+  pointsEarned Int
+  
+  // Reference to the activity (polymorphic)
+  referenceId  String?      // Could be videoId, quizAttemptId, comicId, gameId, etc.
+  referenceType String?     // "video", "quiz", "comic", "game", "achievement"
+  
+  // Additional info
+  description  String?
+  
+  createdAt    DateTime     @default(now())
+  
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([activityType])
+  @@index([createdAt])
+}
+
+
+
+// ============================================================
+// ACTIVITY LOGS (Admin tracking)
+// ============================================================
+
+model ActivityLog {
+  id           String   @id @default(cuid())
+  userId       String
+  action       String   // "created", "updated", "deleted", "published", etc.
+  resourceType String   // "video", "quiz", "comic", "game", "user"
+  resourceId   String?
+  details      Json?    // Additional details as JSON
+  
+  createdAt    DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([resourceType])
+  @@index([createdAt])
+}
+
+// ============================================================
+// SYSTEM SETTINGS
+// ============================================================
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String @db.Text
+  
+  updatedAt DateTime @updatedAt
+}
+
+
+// ============================================================
+// CLASS MANAGEMENT
+// ============================================================
+
+model SchoolClass {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("classes") // Keep the table name as 'classes' or let it be 'SchoolClass' (default)
+}

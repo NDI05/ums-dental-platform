@@ -1,0 +1,1003 @@
+openapi: 3.0.3
+info:
+  title: UMS Dental Education Platform API
+  description: |
+    Complete REST API documentation for UMS Dental Education Platform.
+    
+    ## Features
+    - 🔐 JWT Authentication & Authorization
+    - 👥 Role-Based Access Control (Student, Content Manager, Super Admin)
+    - 📚 Educational Content Management (Videos, Quizzes, Comics, Games)
+    - 🏆 Gamification System (Points, Leaderboards)
+    - 📊 Analytics & Reporting
+    
+    ## Authentication
+    Most endpoints require JWT token in Authorization header:
+    ```
+    Authorization: Bearer {your_jwt_token}
+    ```
+    
+    Get token via `/api/auth/login` endpoint.
+    
+    ## Base URL
+    - Development: `http://localhost:3000`
+    - Production: `https://api.ums-dental.ac.id` (update accordingly)
+    
+  version: 1.0.0
+  contact:
+    name: UMS Dental Platform Team
+    email: support@ums-dental.ac.id
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://api.ums-dental.ac.id
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User registration, login, and profile management
+  - name: Videos
+    description: Educational video content management
+  - name: Quizzes
+    description: Quiz management and attempts
+  - name: Comics
+    description: Educational comic content
+  - name: Games
+    description: Educational mini games
+  - name: Gamification
+    description: Points system and leaderboards
+  - name: User Management
+    description: User administration (Admin only)
+  - name: Analytics
+    description: Platform statistics and reporting (Admin only)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /api/auth/login
+
+  schemas:
+    # Common Schemas
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation successful"
+    
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum: [UNAUTHORIZED, FORBIDDEN, NOT_FOUND, VALIDATION_ERROR, SERVER_ERROR]
+            message:
+              type: string
+              example: "Error description"
+    
+    PaginationParams:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Page number
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: Items per page
+        sortBy:
+          type: string
+          example: "createdAt"
+        order:
+          type: string
+          enum: [asc, desc]
+          default: desc
+    
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    # User & Auth Schemas
+    UserRole:
+      type: string
+      enum: [STUDENT, CONTENT_MANAGER, SUPER_ADMIN]
+    
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "cm4udfbk600011v3r86xkrxcf"
+        username:
+          type: string
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          example: "student@ums.ac.id"
+        role:
+          $ref: '#/components/schemas/UserRole'
+        kelas:
+          type: string
+          nullable: true
+          example: "1A"
+        avatarUrl:
+          type: string
+          nullable: true
+        totalPoints:
+          type: integer
+          example: 1250
+        createdAt:
+          type: string
+          format: date-time
+        isBlocked:
+          type: boolean
+          default: false
+    
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+          maxLength: 100
+        kelas:
+          type: string
+          description: "Grade level (e.g., '1A', '2B')"
+    
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    
+    AuthResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user:
+                  $ref: '#/components/schemas/User'
+                tokens:
+                  type: object
+                  properties:
+                    accessToken:
+                      type: string
+                      example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    refreshToken:
+                      type: string
+                      example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    # Video Schemas
+    Video:
+      type: object
+      properties:
+        id:
+          type: string
+        youtubeId:
+          type: string
+          example: "dQw4w9WgXcQ"
+        title:
+          type: string
+        description:
+          type: string
+        thumbnailUrl:
+          type: string
+        category:
+          type: string
+          nullable: true
+        keyPoints:
+          type: array
+          items:
+            type: string
+        viewCount:
+          type: integer
+        isPublished:
+          type: boolean
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: object
+          properties:
+            id:
+              type: string
+            username:
+              type: string
+    
+    CreateVideoRequest:
+      type: object
+      required:
+        - title
+        - youtubeUrl
+        - duration
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        youtubeUrl:
+          type: string
+          format: uri
+          example: "https://youtube.com/watch?v=dQw4w9WgXcQ"
+        duration:
+          type: integer
+          description: "Duration in seconds"
+        thumbnailUrl:
+          type: string
+          format: uri
+        targetGrade:
+          type: string
+        pointReward:
+          type: integer
+          default: 10
+    
+    UpdateVideoRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        youtubeUrl:
+          type: string
+        thumbnailUrl:
+          type: string
+        targetGrade:
+          type: string
+
+    # Quiz Schemas
+    QuizDifficulty:
+      type: string
+      enum: [EASY, MEDIUM, HARD]
+    
+    Quiz:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        category:
+          type: string
+          nullable: true
+        difficulty:
+          $ref: '#/components/schemas/QuizDifficulty'
+        createdAt:
+          type: string
+          format: date-time
+    
+    CreateQuizRequest:
+      type: object
+      required:
+        - question
+        - answer
+        - explanation
+      properties:
+        question:
+          type: string
+          minLength: 1
+        answer:
+          type: boolean
+          description: "True or False"
+        explanation:
+          type: string
+        category:
+          type: string
+        difficulty:
+          $ref: '#/components/schemas/QuizDifficulty'
+    
+    SubmitQuizRequest:
+      type: object
+      required:
+        - answers
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId:
+                type: string
+              answer:
+                type: boolean
+        timeSpent:
+          type: integer
+          description: "Time spent in seconds"
+
+    # Comic Schemas
+    Comic:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        coverUrl:
+          type: string
+        pages:
+          type: array
+          items:
+            type: string
+          description: "Array of page image URLs"
+        totalPages:
+          type: integer
+        category:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type:string
+        isPublished:
+          type: boolean
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    
+    CreateComicRequest:
+      type: object
+      required:
+        - title
+        - coverImageUrl
+        - pages
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        coverImageUrl:
+          type: string
+          format: uri
+        pages:
+          type: array
+          items:
+            type: object
+            properties:
+              pageNumber:
+                type: integer
+              imageUrl:
+                type: string
+                format: uri
+
+    # Game Schemas
+    Game:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        thumbnailUrl:
+          type: string
+        gameUrl:
+          type: string
+        difficulty:
+          $ref: '#/components/schemas/QuizDifficulty'
+        clickCount:
+          type: integer
+        sortOrder:
+          type: integer
+        isPublished:
+          type: boolean
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    
+    CreateGameRequest:
+      type: object
+      required:
+        - title
+        - thumbnailUrl
+        - gameUrl
+        - difficulty
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        thumbnailUrl:
+          type: string
+          format: uri
+        gameUrl:
+          type: string
+          format: uri
+        difficulty:
+          $ref: '#/components/schemas/QuizDifficulty'
+        sortOrder:
+          type: integer
+          default: 0
+
+    # Gamification Schemas
+    PointBalance:
+      type: object
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        totalPoints:
+          type: integer
+        rank:
+          type: integer
+    
+    PointTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+        activityType:
+          type: string
+          enum: [VIDEO_WATCHED, QUIZ_COMPLETED, COMIC_READ, GAME_PLAYED]
+        pointsEarned:
+          type: integer
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: string
+        username:
+          type: string
+        kelas:
+          type: string
+          nullable: true
+        totalPoints:
+          type: integer
+        avatarUrl:
+          type: string
+          nullable: true
+
+    # Analytics Schema
+    AnalyticsOverview:
+      type: object
+      properties:
+        users:
+          type: object
+          properties:
+            totalStudents:
+              type: integer
+        content:
+          type: object
+          properties:
+            totalVideos:
+              type: integer
+            totalQuizzes:
+              type: integer
+            totalComics:
+              type: integer
+            totalGames:
+              type: integer
+        engagement:
+          type: object
+          properties:
+            totalVideoViews:
+              type: integer
+            totalQuizAttempts:
+              type: integer
+            totalPointsAwarded:
+              type: integer
+        recentActivity:
+          type: object
+          properties:
+            last7Days:
+              type: object
+              properties:
+                videoViews:
+                  type: integer
+                quizAttempts:
+                  type: integer
+                comicReads:
+                  type: integer
+                gameClicks:
+                  type: integer
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "UNAUTHORIZED"
+              message: "Token tidak ditemukan"
+    
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "FORBIDDEN"
+              message: "Anda tidak memiliki akses ke resource ini"
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "NOT_FOUND"
+              message: "Resource tidak ditemukan"
+    
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "VALIDATION_ERROR"
+              message: "Data tidak valid"
+
+paths:
+  # ==========================================
+  # AUTHENTICATION ENDPOINTS
+  # ==========================================
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user
+      description: Create a new student account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              username: "johndoe"
+              email: "john@student.com"
+              password: "password123"
+              kelas: "1A"
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate and receive JWT tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "student@ums.ac.id"
+              password: "student123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Retrieve authenticated user's profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/profile:
+    put:
+      tags:
+        - Authentication
+      summary: Update profile
+      description: Update current user's profile information
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                kelas:
+                  type: string
+                avatarUrl:
+                  type: string
+            example:
+              username: "john_updated"
+              kelas: "2A"
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/change-password:
+    post:
+      tags:
+        - Authentication
+      summary: Change password
+      description: Change current user's password
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 6
+            example:
+              currentPassword: "oldpass123"
+              newPassword: "newpass456"
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Invalidate current session
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==========================================
+  # VIDEO ENDPOINTS
+  # ==========================================
+  /api/videos:
+    get:
+      tags:
+        - Videos
+      summary: List videos
+      description: Get paginated list of published videos
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search in title and description
+        - in: query
+          name: targetGrade
+          schema:
+            type: string
+          description: Filter by grade level
+      responses:
+        '200':
+          description: Videos retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          data:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Video'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+    
+    post:
+      tags:
+        - Videos
+      summary: Create video
+      description: Create new video (Admin/CM only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVideoRequest'
+            example:
+              title: "Cara Menyikat Gigi yang Benar"
+              description: "Tutorial lengkap menyikat gigi"
+              youtubeUrl: "https://youtube.com/watch?v=dQw4w9WgXcQ"
+              duration: 300
+              targetGrade: "Kelas 1"
+      responses:
+        '200':
+          description: Video created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Video'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/videos/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Video ID
+    
+    get:
+      tags:
+        - Videos
+      summary: Get video detail
+      description: Retrieve single video by ID
+      responses:
+        '200':
+          description: Video retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Video'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags:
+        - Videos
+      summary: Update video
+      description: Update video (Admin/CM owner only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+       content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVideoRequest'
+      responses:
+        '200':
+          description: Video updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Video'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    delete:
+      tags:
+        - Videos
+      summary: Delete video
+      description: Delete video (Admin/CM owner only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Video deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/videos/{id}/view:
+    post:
+      tags:
+        - Videos
+      summary: Track video view
+      description: Record video view and award points (Student only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                completed:
+                  type: boolean
+                  description: "Whether video was watched to completion"
+            example:
+              completed: true
+      responses:
+        '200':
+          description: View tracked, points awarded
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          videoView:
+                            type: object
+                          pointsEarned:
+                            type: integer
+                            example: 10
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+Due to length constraints, I'll continue in next file...

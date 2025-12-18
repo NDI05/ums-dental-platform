@@ -1,26 +1,117 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* UMS Dental Hero Theme */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Primary: Ocean Blue (Trust) */
+  --primary-50: #F0F9FF;
+  --primary-100: #E0F2FE;
+  --primary-200: #BAE6FD;
+  --primary-300: #7DD3FC;
+  --primary-400: #38BDF8;
+  --primary-500: #0EA5E9;
+  /* Main Brand */
+  --primary-600: #0284C7;
+  --primary-700: #0369A1;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Secondary: Mint Green (Health) */
+  --secondary-50: #ECFDF5;
+  --secondary-100: #D1FAE5;
+  --secondary-400: #34D399;
+  --secondary-500: #10B981;
+  --secondary-600: #059669;
+
+  /* Accent: Sunshine Yellow (Fun/Points) */
+  --accent-400: #FBBF24;
+  --accent-500: #F59E0B;
+  --accent-600: #D97706;
+
+  /* Neutrals */
+  --gray-50: #F8FAFC;
+  --gray-100: #F1F5F9;
+  --gray-200: #E2E8F0;
+  --gray-300: #CBD5E1;
+  --gray-400: #94A3B8;
+  --gray-500: #64748B;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1E293B;
+  --gray-900: #0F172A;
+  --gray-950: #020617;
+
+  --background: var(--gray-50);
+  /* Slate-50 */
+  --surface: #FFFFFF;
+  --text-main: var(--gray-900);
+  /* Slate-900 */
+  --text-muted: var(--gray-500);
+  /* State Colors */
+  --success-200: #BBF7D0;
+  --success-500: #22C55E;
+  --success-600: #16A34A;
+
+  --error-200: #FECACA;
+  --error-500: #EF4444;
+  --error-600: #DC2626;
+
+  /* UI Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+
+  /* UI Shadows */
+  --shadow-soft-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-soft-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 20px rgba(14, 165, 233, 0.5);
+
+  /* Element Borders */
+  --border: #E2E8F0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background);
+  color: var(--text-main);
+  font-family: var(--font-fredoka), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* GLOBAL FONT FIX: Ensure inputs inherit the font */
+input,
+textarea,
+select,
+button,
+label {
+  font-family: var(--font-fredoka), sans-serif !important;
+}
+
+/* Explicit Utility Class */
+.font-fredoka {
+  font-family: var(--font-fredoka), sans-serif !important;
+}
+
+/* Desktop Background Pattern */
+@media (min-width: 481px) {
+  body {
+    background-image:
+      radial-gradient(at 10% 10%, rgba(14, 165, 233, 0.1) 0px, transparent 50%),
+      radial-gradient(at 90% 90%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+    background-color: #F1F5F9;
+  }
+}
+
+/* Custom Scrollbar for independent scroll areas */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-400);
 }
