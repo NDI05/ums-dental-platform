@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         const file = formData.get('file') as File;
 
         if (!file) {
-            return errorResponse('File tidak ditemukan', 400);
+            return errorResponse('File tidak ditemukan', 'VALIDATION_ERROR', null, 400);
         }
 
         // 3. Read File Buffer
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         const rawData = XLSX.utils.sheet_to_json(ws);
 
         if (rawData.length === 0) {
-            return errorResponse('File Excel kosong', 400);
+            return errorResponse('File Excel kosong', 'VALIDATION_ERROR', null, 400);
         }
 
         // Fetch all categories for lookup
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (validQuizzes.length === 0) {
-            return errorResponse(`Gagal import. Semua baris bermasalah. ${errors.slice(0, 3).join(', ')}`, 400);
+            return errorResponse(`Gagal import. Semua baris bermasalah. ${errors.slice(0, 3).join(', ')}`, 'VALIDATION_ERROR', errors, 400);
         }
 
         // 6. Bulk Insert
@@ -150,6 +150,6 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Import Error:', error);
-        return errorResponse(error.message || 'Gagal memproses file import', 500);
+        return errorResponse(error.message || 'Gagal memproses file import', 'INTERNAL_SERVER_ERROR', error, 500);
     }
 }

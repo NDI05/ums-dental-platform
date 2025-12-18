@@ -7,7 +7,7 @@ interface ApiFetchOptions extends RequestInit {
 export async function apiFetch(url: string, options: ApiFetchOptions = {}) {
     const { accessToken, logout } = useAuthStore.getState();
 
-    const headers = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers,
     };

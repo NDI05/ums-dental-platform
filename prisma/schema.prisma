@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ============================================================
@@ -162,7 +163,7 @@ model Quiz {
   updatedAt   DateTime        @updatedAt
   
   // Relations
-  attemptAnswers QuizAttemptAnswer[]
+  // attemptAnswers QuizAttemptAnswer[] <--- REMOVED
   sessionQuestions QuizSessionQuestion[]
   
   @@index([category])
@@ -180,30 +181,23 @@ model QuizAttempt {
   score           Int      // Calculated: (correctAnswers / totalQuestions) * 100
   pointsEarned    Int      // 50 base + (10 * correctAnswers)
   
+  // Answers stored as JSON to save DB rows
+  // Structure: [{ quizId: string, userAnswer: boolean, isCorrect: boolean }]
+  answers         Json?    
+  
   // Timestamp
   completedAt     DateTime @default(now())
   
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Relations
-  answers         QuizAttemptAnswer[]
+  // Relations - REMOVED QuizAttemptAnswer
+  // answers         QuizAttemptAnswer[]
   
   @@index([userId])
   @@index([completedAt])
 }
 
-model QuizAttemptAnswer {
-  id          String      @id @default(cuid())
-  attemptId   String
-  quizId      String
-  userAnswer  Boolean
-  isCorrect   Boolean
-  
-  attempt     QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  quiz        Quiz        @relation(fields: [quizId], references: [id])
-  
-  @@index([attemptId])
-}
+// MODEL QuizAttemptAnswer REMOVED
 
 // ============================================================
 // LIVE QUIZ SESSION (Quizizz-like)
@@ -373,6 +367,7 @@ model GameClick {
   userId    String
   gameId    String
   
+  // Tracking
   clickedAt DateTime @default(now())
   
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -416,8 +411,6 @@ model PointTransaction {
   @@index([activityType])
   @@index([createdAt])
 }
-
-
 
 // ============================================================
 // ACTIVITY LOGS (Admin tracking)

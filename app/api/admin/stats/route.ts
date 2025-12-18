@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
             totalQuizAttempts,
             recentUsers,
             activityLogs,
-            quizAnswersRaw
+            attemptsWithAnswers,
+            allQuizzes
         ] = await Promise.all([
             prisma.user.count({ where: { role: 'STUDENT' } }),
             prisma.comic.count({ where: { isPublished: true } }),
@@ -53,15 +54,22 @@ export async function GET(request: NextRequest) {
                 where: { createdAt: { gte: sevenDaysAgo } },
                 select: { userId: true, createdAt: true }
             }),
-            prisma.quizAttemptAnswer.findMany({
-                include: { quiz: { select: { category: true } } }
+            prisma.quizAttempt.findMany({
+                select: { answers: true }
+            }),
+            prisma.quiz.findMany({
+                select: { id: true, category: true, categoryRef: { select: { name: true } } }
             })
         ]);
+
+        // ... (Weekly Activity logic remains same - skipped in replacement if possible, but I'll include it to be safe or target just the quiz part) ...
+        // Actually I should split the replacement to keep weekly activity intact if I can target ranges.
+        // But the previous block defines variables used later.
 
         // Process Weekly Activity (Last 7 Days)
         const weeklyActivityData = Array(7).fill(0).map((_, i) => {
             const d = new Date();
-            d.setDate(d.getDate() - (6 - i)); // 6 days ago to today
+            d.setDate(d.getDate() - (6 - i));
             const dateStr = d.toISOString().split('T')[0];
             return {
                 date: dateStr,
@@ -83,20 +91,34 @@ export async function GET(request: NextRequest) {
         }));
 
         // Process Quiz Performance
+        // 1. Build Quiz Category Map
+        const quizCategoryMap = new Map<string, string>();
+        allQuizzes.forEach(q => {
+            const catName = q.categoryRef?.name || q.category || 'Umum';
+            quizCategoryMap.set(q.id, catName);
+        });
+
+        // 2. Aggregate Stats
         const categoryStats = new Map<string, { correct: number, total: number }>();
-        quizAnswersRaw.forEach(ans => {
-            const cat = ans.quiz.category || 'Umum';
-            if (!categoryStats.has(cat)) categoryStats.set(cat, { correct: 0, total: 0 });
-            const stat = categoryStats.get(cat)!;
-            stat.total++;
-            if (ans.isCorrect) stat.correct++;
+
+        attemptsWithAnswers.forEach(attempt => {
+            if (Array.isArray(attempt.answers)) {
+                (attempt.answers as any[]).forEach((ans: any) => {
+                    if (ans.quizId) {
+                        const cat = quizCategoryMap.get(ans.quizId) || 'Umum';
+                        if (!categoryStats.has(cat)) categoryStats.set(cat, { correct: 0, total: 0 });
+                        const stat = categoryStats.get(cat)!;
+                        stat.total++;
+                        if (ans.isCorrect) stat.correct++;
+                    }
+                });
+            }
         });
 
         const quizPerformance = Array.from(categoryStats.entries()).map(([category, stat]) => ({
             category,
             score: Math.round((stat.correct / stat.total) * 100),
-            // Assign color based on score or random
-            color: stat.correct / stat.total > 0.8 ? 'bg-green-500' : stat.correct / stat.total > 0.5 ? 'bg-blue-500' : 'bg-red-500'
+            color: (stat.correct / stat.total) > 0.8 ? 'bg-green-500' : (stat.correct / stat.total) > 0.5 ? 'bg-blue-500' : 'bg-red-500'
         }));
 
         // If no quiz data, provide defaults or empty

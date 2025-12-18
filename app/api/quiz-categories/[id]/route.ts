@@ -53,8 +53,7 @@ export async function PUT(
         return successResponse(updatedCategory, 'Kategori berhasil diperbarui');
     } catch (error: any) {
         if (error instanceof z.ZodError) {
-            const zodError = error as z.ZodError;
-            return errorResponse(zodError.errors[0].message, 'VALIDATION_ERROR', zodError.errors, 400);
+            return errorResponse((error as any).errors[0].message, 'VALIDATION_ERROR', (error as any).errors, 400);
         }
         return errorResponse(error.message || 'Gagal update kategori', 'INTERNAL_SERVER_ERROR', error, 500);
     }

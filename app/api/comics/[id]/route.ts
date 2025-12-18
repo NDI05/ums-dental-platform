@@ -5,6 +5,7 @@ import { verifyToken } from '@/lib/auth';
 import { updateComicSchema } from '@/lib/validations';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { deleteFile } from '@/lib/storage';
 
 export async function GET(
     request: NextRequest,
@@ -137,8 +138,18 @@ export async function DELETE(
             return notFoundResponse('Komik');
         }
 
+
+
         if (user.role === 'CONTENT_MANAGER' && existingComic.createdById !== user.id) {
             return forbiddenResponse('Anda hanya dapat menghapus komik yang Anda buat');
+        }
+
+        // Cleanup Files
+        if (existingComic.coverUrl) {
+            await deleteFile(existingComic.coverUrl);
+        }
+        if (existingComic.pages && existingComic.pages.length > 0) {
+            await Promise.all(existingComic.pages.map(pageUrl => deleteFile(pageUrl)));
         }
 
         await prisma.comic.delete({ where: { id: resolvedParams.id } });

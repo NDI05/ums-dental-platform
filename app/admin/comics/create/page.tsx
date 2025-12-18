@@ -8,6 +8,7 @@ import Input from '@/components/ui/Input';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth';
+import { compressImage } from '@/lib/compression';
 
 export default function CreateComicPage() {
     const router = useRouter();
@@ -54,18 +55,25 @@ export default function CreateComicPage() {
     };
 
     const uploadFile = async (file: File, type: 'cover' | 'comic'): Promise<string> => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', type);
+        try {
+            const compressedFile = await compressImage(file);
 
-        const res = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-        });
+            const formData = new FormData();
+            formData.append('file', compressedFile);
+            formData.append('type', type);
 
-        if (!res.ok) throw new Error('Upload failed');
-        const data = await res.json();
-        return data.data.url;
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
+            return data.data.url;
+        } catch (error) {
+            console.error('Upload process error:', error);
+            throw error;
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

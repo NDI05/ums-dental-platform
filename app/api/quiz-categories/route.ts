@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         if (error instanceof z.ZodError) {
-            return errorResponse(error.errors[0].message, 'VALIDATION_ERROR', error.errors, 400);
+            return errorResponse((error as any).errors[0].message, 'VALIDATION_ERROR', (error as any).errors, 400);
         }
         console.error('Category Create Error:', error);
         return errorResponse('Gagal membuat kategori', 'INTERNAL_SERVER_ERROR', error.message, 500);

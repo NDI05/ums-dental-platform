@@ -22,7 +22,7 @@ export function CharacterMascot({ className = "", variant = 'waving' }: Characte
         transition: {
             duration: 3,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut" as const
         }
     };
 
@@ -32,7 +32,7 @@ export function CharacterMascot({ className = "", variant = 'waving' }: Characte
         transition: {
             duration: 2,
             repeat: Infinity,
-            ease: "linear",
+            ease: "linear" as const,
             delay: 0.5
         }
     };

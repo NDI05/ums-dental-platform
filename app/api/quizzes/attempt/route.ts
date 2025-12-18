@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
             // Create quiz attempt with transaction
             const quizAttempt = await prisma.$transaction(async (tx) => {
                 // Create attempt record
+                // Create attempt record with answers JSON
                 const attempt = await tx.quizAttempt.create({
                     data: {
                         userId: decoded.userId,
@@ -91,18 +92,15 @@ export async function POST(request: NextRequest) {
                         correctAnswers,
                         score,
                         pointsEarned,
+                        answers: answers.map((answer) => ({
+                            quizId: answer.quizId,
+                            userAnswer: answer.answer,
+                            isCorrect: quizMap.get(answer.quizId)!.answer === answer.answer,
+                        })),
                     },
                 });
 
-                // Create answer records
-                await tx.quizAttemptAnswer.createMany({
-                    data: answers.map((answer) => ({
-                        attemptId: attempt.id,
-                        quizId: answer.quizId,
-                        userAnswer: answer.answer,  // Changed from 'answer' to 'userAnswer'
-                        isCorrect: quizMap.get(answer.quizId)!.answer === answer.answer,
-                    })),
-                });
+                // Removed QuizAttemptAnswer.createMany since we use JSONB now
 
                 // Award points
                 await tx.pointTransaction.create({
@@ -123,6 +121,9 @@ export async function POST(request: NextRequest) {
                 });
 
                 return attempt;
+            }, {
+                maxWait: 5000, // Wait max 5s for connection
+                timeout: 10000 // Transaction must finish in 10s
             });
 
             return successResponse(

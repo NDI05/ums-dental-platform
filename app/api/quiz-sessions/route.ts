@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
             cause: error.cause
         });
 
-        if (error instanceof z.ZodError) return errorResponse(error.errors[0].message, 'VALIDATION_ERROR', error.errors, 400);
+        if (error instanceof z.ZodError) return errorResponse((error as any).errors[0].message, 'VALIDATION_ERROR', (error as any).errors, 400);
         return errorResponse('Gagal membuat sesi', 'INTERNAL_SERVER_ERROR', error, 500);
     }
 }

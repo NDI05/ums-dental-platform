@@ -160,10 +160,7 @@ export async function DELETE(
             return forbiddenResponse('Anda hanya dapat menghapus soal yang Anda buat');
         }
 
-        // Manually cascade delete dependent answers first
-        await prisma.quizAttemptAnswer.deleteMany({
-            where: { quizId: resolvedParams.id },
-        });
+
 
         await prisma.quiz.delete({
             where: { id: resolvedParams.id },

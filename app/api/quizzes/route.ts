@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
             data: {
                 question: validatedData.question,
                 answer: validatedData.answer,
-                explanation: validatedData.explanation,
+                explanation: validatedData.explanation || '',
                 category: validatedData.category,
                 difficulty: validatedData.difficulty,
                 createdById: decoded.userId,
