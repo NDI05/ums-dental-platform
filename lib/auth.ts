@@ -53,6 +53,28 @@ export function extractToken(authHeader: string | null): string | null {
     return authHeader.replace('Bearer ', '');
 }
 
+/**
+ * Helper to get token from Request (Header OR Cookie)
+ * Useful for APIs that supported both Client-side (Bearer) and Server-Refreshed (Cookie) requests
+ */
+import { NextRequest } from 'next/server';
+
+export function getTokenFromRequest(request: NextRequest): string | null {
+    // 1. Check Header (Bearer)
+    const authHeader = request.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        return authHeader.replace('Bearer ', '');
+    }
+
+    // 2. Check Cookie (HTTPOnly)
+    const cookieToken = request.cookies.get('token')?.value;
+    if (cookieToken) {
+        return cookieToken;
+    }
+
+    return null;
+}
+
 // Alias for backwards compatibility and cleaner imports
 export const verifyToken = verifyAccessToken;
 

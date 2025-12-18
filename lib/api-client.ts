@@ -20,6 +20,7 @@ export async function apiFetch(url: string, options: ApiFetchOptions = {}) {
         const response = await fetch(url, {
             ...options,
             headers,
+            credentials: 'include', // Ensure HTTP-only cookies are sent with request
         });
 
         if (response.status === 401) {

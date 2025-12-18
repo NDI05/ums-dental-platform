@@ -1,46 +1,48 @@
-import { NextRequest } from 'next/server';
-import { successResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api-response';
-import { verifyToken } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken, getTokenFromRequest } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
     try {
-        const authHeader = request.headers.get('authorization');
+        // Use the helper to get token from Cookie or Header
+        const token = getTokenFromRequest(request);
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return unauthorizedResponse('Token tidak ditemukan');
+        if (!token) {
+            return NextResponse.json({ success: false, message: 'No session' }, { status: 401 });
         }
-
-        const token = authHeader.substring(7);
 
         const decoded = verifyToken(token);
-
         if (!decoded) {
-            return unauthorizedResponse('Token tidak valid atau expired');
+            return NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
         }
 
-        // Get user from database
+        // Fetch fresh user data (optional, but good for role sync)
         const user = await prisma.user.findUnique({
             where: { id: decoded.userId },
             select: {
                 id: true,
-                username: true,
                 email: true,
                 role: true,
-                kelas: true,
+                username: true,
                 avatarUrl: true,
-                totalPoints: true,
-                createdAt: true,
-            },
+            }
         });
 
         if (!user) {
-            return unauthorizedResponse('User tidak ditemukan');
+            return NextResponse.json({ success: false, message: 'User not found' }, { status: 401 });
         }
 
-        return successResponse(user, 'Profile berhasil diambil');
+        return NextResponse.json({
+            success: true,
+            data: {
+                user,
+                accessToken: token, // Echo back token if needed for local store (or just confirm validity)
+            }
+        });
+
     } catch (error) {
-        console.error('Get profile error:', error);
-        return serverErrorResponse('Terjadi kesalahan saat mengambil profile');
+        return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
     }
 }
