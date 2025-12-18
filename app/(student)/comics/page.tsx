@@ -5,37 +5,36 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import { StudentBackground } from '@/components/layout/student-background';
 import { apiFetch } from '@/lib/api-client';
 
 const CATEGORIES = ['Semua', 'Cerita Seru', 'Edukasi', 'Sains', 'Misteri'];
 
+const fetcher = (url: string) => apiFetch(url).then((res) => res.json());
+
+interface Comic {
+    id: string;
+    title: string;
+    description: string;
+    coverUrl: string;
+    category: string;
+    _count?: {
+        reads: number;
+    };
+}
+
 export default function StudentComicsPage() {
     const [activeCategory, setActiveCategory] = useState('Semua');
-    const [comics, setComics] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        const fetchComics = async () => {
-            try {
-                // Try fetching real data
-                const res = await apiFetch('/api/comics?limit=20');
-                const data = await res.json();
-                if (data.success && data.data.data.length > 0) {
-                    setComics(data.data.data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch comics", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const { data: apiData, isLoading } = useSWR('/api/comics?limit=20', fetcher, {
+        revalidateOnFocus: false,
+    });
 
-        fetchComics();
-    }, []);
+    const comics: Comic[] = apiData?.success ? apiData.data.data : [];
 
-    const filteredComics = comics.filter(comic => {
+    const filteredComics = comics.filter((comic) => {
         const matchesSearch = comic.title.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = activeCategory === 'Semua' || comic.category === activeCategory;
         return matchesSearch && matchesCategory;
@@ -122,6 +121,7 @@ export default function StudentComicsPage() {
                                         src={comics[0].coverUrl || '/placeholder-comic.jpg'}
                                         alt={comics[0].title}
                                         fill
+                                        priority
                                         className="object-cover"
                                         unoptimized
                                         onError={(e) => {

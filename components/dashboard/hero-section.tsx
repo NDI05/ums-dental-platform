@@ -44,6 +44,7 @@ export function HeroSection({ completedMissions = 0, totalMissions = 5, missionD
                                 alt="Dental Hero Boy"
                                 fill
                                 className="object-contain drop-shadow-2xl"
+                                priority
                             />
                             {/* Floating Badge on Boy */}
                             <div className="absolute top-1 right-1 w-8 h-8 bg-[#F59E0B] rounded-full flex items-center justify-center shadow-xl border-2 border-white animate-bounce">
@@ -58,6 +59,7 @@ export function HeroSection({ completedMissions = 0, totalMissions = 5, missionD
                                 alt="Dental Hero Girl"
                                 fill
                                 className="object-contain drop-shadow-2xl"
+                                priority
                             />
                         </div>
                     </div>
@@ -149,8 +151,8 @@ export function HeroSection({ completedMissions = 0, totalMissions = 5, missionD
                                         <div
                                             key={mission.id}
                                             className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${mission.isCompleted
-                                                    ? 'bg-emerald-50 border-emerald-100'
-                                                    : 'bg-white border-slate-100'
+                                                ? 'bg-emerald-50 border-emerald-100'
+                                                : 'bg-white border-slate-100'
                                                 }`}
                                         >
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${mission.isCompleted ? 'bg-emerald-500 text-white shadow-emerald-200 shadow-lg' : 'bg-slate-100 text-slate-400'

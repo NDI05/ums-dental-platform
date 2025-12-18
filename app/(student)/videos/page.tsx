@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import { StudentBackground } from '@/components/layout/student-background';
 import { apiFetch } from '@/lib/api-client';
 import { useAuthStore } from '@/lib/store/auth';
@@ -22,36 +23,20 @@ interface Video {
 
 const CATEGORIES = ['Semua', 'Tutorial', 'Lagu', 'Edukasi', 'Kartun'];
 
+const fetcher = (url: string) => apiFetch(url).then((res) => res.json());
+
 // Metadata removed
 
 export default function VideosPage() {
     const { accessToken } = useAuthStore();
     const [activeCategory, setActiveCategory] = useState('Semua');
-    const [videos, setVideos] = useState<Video[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        const fetchVideos = async () => {
-            try {
-                // Fetch with limit 50 to get a good list.
-                // We will handle category/search on client side for instant feedback 
-                // since the dataset is likely small for now.
-                const res = await apiFetch('/api/videos?limit=50');
-                const json = await res.json();
+    const { data: apiData, isLoading } = useSWR('/api/videos?limit=50', fetcher, {
+        revalidateOnFocus: false,
+    });
 
-                if (json.success && json.data && Array.isArray(json.data.data)) {
-                    setVideos(json.data.data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch videos", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchVideos();
-    }, []);
+    const videos: Video[] = apiData?.success && Array.isArray(apiData.data.data) ? apiData.data.data : [];
 
     const filteredVideos = videos.filter(video => {
         const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase());
