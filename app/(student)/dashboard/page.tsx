@@ -58,6 +58,16 @@ export default function DashboardPage() {
     const totalMissions = data?.missions.total || 5;
     const missionDetails = data?.missions.details || [];
 
+    // Predictive Prefetching
+    const { useRouter } = require('next/navigation');
+    const router = useRouter();
+
+    const prefetchRoutes = () => {
+        router.prefetch('/student/quizzes');
+        router.prefetch('/student/videos');
+        router.prefetch('/student/leaderboard');
+    };
+
     return (
         <StudentBackground>
             <GamificationHeader
@@ -66,7 +76,7 @@ export default function DashboardPage() {
                 avatarUrl={avatarUrl}
             />
             <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar pb-32">
-                <div className="flex-1 flex flex-col pt-6">
+                <div className="flex-1 flex flex-col pt-6" onMouseEnter={prefetchRoutes}>
                     <HeroSection
                         completedMissions={completedMissions}
                         totalMissions={totalMissions}

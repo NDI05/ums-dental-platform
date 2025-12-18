@@ -126,6 +126,7 @@ export default function VideosPage() {
                                                 alt={video.title}
                                                 fill
                                                 className="object-cover"
+                                                priority={idx < 2}
                                             />
                                             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                                                 <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
