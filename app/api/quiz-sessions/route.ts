@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, connection } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { unauthorizedResponse, errorResponse, successResponse, forbiddenResponse } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
@@ -23,6 +23,7 @@ function generateCode(length = 6) {
 }
 
 export async function GET(req: NextRequest) {
+    await connection();
     try {
         const authHeader = req.headers.get('authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) return unauthorizedResponse();
@@ -49,6 +50,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    await connection();
     try {
         // 1. Auth Check
         const authHeader = req.headers.get('authorization');
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
         // Ensure we have enough questions
         const availableCount = await prisma.quiz.count({ where: whereClause });
         if (availableCount < totalQuestions) {
-            return errorResponse(`Hanya tersedia ${availableCount} soal dalam kategori ini (diminta: ${totalQuestions})`, 'INSUFFICIENT_DATA', null, 400);
+            return errorResponse(`Hanya tersedia${availableCount} soal dalam kategori ini (diminta: ${totalQuestions})`, 'INSUFFICIENT_DATA', null, 400);
         }
 
         // Fetch IDs to randomize efficiently

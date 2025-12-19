@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, connection } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { unauthorizedResponse, errorResponse, successResponse } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
@@ -8,10 +8,11 @@ const joinSchema = z.object({
     code: z.string().min(1, "Kode sesi wajib diisi").toUpperCase()
 });
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
+    await connection();
     try {
         // 1. Auth Check
-        const authHeader = req.headers.get('authorization');
+        const authHeader = request.headers.get('authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) return unauthorizedResponse();
         const token = authHeader.substring(7);
         const decoded = verifyToken(token);
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
         if (!user) return unauthorizedResponse();
 
         // 2. Validate Code
-        const body = await req.json();
+        const body = await request.json();
         const { code } = joinSchema.parse(body);
 
         // 3. Find Session
