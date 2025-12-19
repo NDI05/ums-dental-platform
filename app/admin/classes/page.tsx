@@ -71,21 +71,9 @@ export default function AdminClassesPage() {
         }
     };
 
+    // Delete functionality removed as Class management is now derived from Users
     const handleDelete = async (id: string) => {
-        if (!confirm('Apakah Anda yakin ingin menghapus kelas ini?')) return;
-
-        try {
-            const res = await apiFetch(`/api/classes/${id}`, {
-                method: 'DELETE'
-            });
-            if (res.ok) {
-                setClasses(prev => prev.filter(c => c.id !== id));
-            } else {
-                alert('Gagal menghapus kelas');
-            }
-        } catch (error) {
-            console.error('Delete error', error);
-        }
+        alert("Fitur hapus kelas dinonaktifkan sementara karena sinkronisasi data User.");
     };
 
     return (
@@ -162,13 +150,14 @@ export default function AdminClassesPage() {
                                             </div>
                                             <span className="font-bold text-[var(--gray-800)]">{cls.name}</span>
                                         </div>
-                                        <button
+                                        {/* Delete button disabled */}
+                                        {/* <button
                                             onClick={() => handleDelete(cls.id)}
                                             className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                                             title="Hapus Kelas"
                                         >
                                             <Trash2 className="w-5 h-5" />
-                                        </button>
+                                        </button> */}
                                     </div>
                                 ))}
                             </div>

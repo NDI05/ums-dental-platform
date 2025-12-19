@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth';
 
@@ -9,14 +9,20 @@ interface AuthGuardProps {
     allowedRoles?: string[];
 }
 
-export default function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
+function AuthGuardContent({ children, allowedRoles }: AuthGuardProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { user, accessToken, logout, setAuth } = useAuthStore();
     const [authorized, setAuthorized] = useState(false);
     const [isChecking, setIsChecking] = useState(true);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
         const checkAuth = async () => {
             // 1. If we have a token in store, validate it
             if (accessToken && user) {
@@ -99,9 +105,9 @@ export default function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
         };
 
         checkAuth();
-    }, [accessToken, user, allowedRoles, router, logout, pathname, setAuth]);
+    }, [accessToken, user, allowedRoles, router, logout, pathname, setAuth, mounted]);
 
-    if (isChecking) {
+    if (!mounted || isChecking) {
         // Replace with a nice Loading Spinner component
         return (
             <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -113,4 +119,16 @@ export default function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     if (!authorized) return null;
 
     return <>{children}</>;
+}
+
+export default function AuthGuard(props: AuthGuardProps) {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen bg-slate-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        }>
+            <AuthGuardContent {...props} />
+        </Suspense>
+    );
 }

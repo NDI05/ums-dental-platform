@@ -18,7 +18,7 @@ const protectedRoutes = [
 // Admin routes
 const adminRoutes = ['/admin'];
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // 1. Check if route is protected

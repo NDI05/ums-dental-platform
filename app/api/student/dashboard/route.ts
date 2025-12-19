@@ -1,11 +1,12 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, connection } from 'next/server';
 import { successResponse, unauthorizedResponse, serverErrorResponse } from '@/lib/api-response';
 import { verifyToken } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic';
+
 
 export async function GET(request: NextRequest) {
+    await connection();
     try {
         const authHeader = request.headers.get('authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) {

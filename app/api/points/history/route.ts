@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, connection } from 'next/server';
 import { z } from 'zod';
 import { successResponse, unauthorizedResponse, validationErrorResponse, serverErrorResponse } from '@/lib/api-response';
 import { verifyToken } from '@/lib/auth';
@@ -6,6 +6,7 @@ import { paginationSchema } from '@/lib/validations';
 import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
+    await connection();
     try {
         const authHeader = request.headers.get('authorization');
 
