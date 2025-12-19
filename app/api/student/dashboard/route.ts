@@ -7,6 +7,12 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
     await connection();
+
+    // SWR Optimization: Revalidate every 1 minute, allow stale for 1 hour
+    const headers = {
+        'Cache-Control': 's-maxage=60, stale-while-revalidate=3600'
+    };
+
     try {
         const authHeader = request.headers.get('authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -111,7 +117,7 @@ export async function GET(request: NextRequest) {
                 progress: Math.round((completedMissions / totalMissions) * 100),
                 details: missionDetails
             }
-        }, 'Dashboard data fetched');
+        }, 'Dashboard data fetched', 200, headers);
 
     } catch (error) {
         console.error('Dashboard API Error:', error);

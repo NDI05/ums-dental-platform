@@ -1,10 +1,15 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, connection } from 'next/server';
 import { successResponse, serverErrorResponse } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 
-
-
 export async function GET(request: NextRequest) {
+    await connection();
+
+    // SWR Optimization: Revalidate every 1 minute, allow stale for 1 hour
+    const headers = {
+        'Cache-Control': 's-maxage=60, stale-while-revalidate=3600'
+    };
+
     try {
         // Fetch top 50 users by points
         // In a real app we might cache this or restrict it more.
@@ -35,7 +40,7 @@ export async function GET(request: NextRequest) {
             kelas: user.kelas
         }));
 
-        return successResponse(leaderboard, 'Leaderboard data fetched successfully');
+        return successResponse(leaderboard, 'Leaderboard data fetched successfully', 200, headers);
     } catch (error) {
         console.error('Leaderboard Fetch Error:', error);
         return serverErrorResponse('Gagal mengambil data leaderboard');

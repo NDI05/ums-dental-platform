@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, connection } from 'next/server';
 import { z } from 'zod';
 import { successResponse, unauthorizedResponse, validationErrorResponse, forbiddenResponse, serverErrorResponse } from '@/lib/api-response';
 import { verifyToken } from '@/lib/auth';
@@ -14,6 +14,7 @@ const submitQuizSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+    await connection();
     try {
         const authHeader = request.headers.get('authorization');
 
