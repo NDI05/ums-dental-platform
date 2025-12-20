@@ -104,7 +104,7 @@ export default async function proxy(request: NextRequest) {
     if (pathname.startsWith('/api/quizzes/attempt')) {
         // Simple in-memory rate limiting (Per Serverless Instance)
         // Note: In distributed Edge, this resets per instance/region, which is actually good for scaling.
-        const ip = request.ip || '127.0.0.1';
+        const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
         const limitKey = `rate_limit_${ip}`;
 
         // Allow 5 submissions per minute per IP (Generous for user, strict for abuse)

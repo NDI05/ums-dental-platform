@@ -14,7 +14,10 @@ const submitQuizSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-    await connection();
+    // Phase 1: Fail-fast & No Connection Overhead
+    // await connection(); // Removed as requested to reduce overhead for Write OPS
+
+    const startTime = Date.now();
     try {
         const authHeader = request.headers.get('authorization');
 
@@ -33,9 +36,11 @@ export async function POST(request: NextRequest) {
 
             const body = await request.json();
 
+            // 1. Validation Logic (Outside Transaction)
             // Only students can submit quiz attempts
             const user = await prisma.user.findUnique({
                 where: { id: decoded.userId },
+                select: { id: true, role: true } // Lean query
             });
 
             if (!user) {
@@ -53,6 +58,7 @@ export async function POST(request: NextRequest) {
             const quizIds = answers.map((a) => a.quizId);
             const quizzes = await prisma.quiz.findMany({
                 where: { id: { in: quizIds } },
+                select: { id: true, answer: true, explanation: true } // Lean query
             });
 
             if (quizzes.length !== answers.length) {
@@ -82,10 +88,10 @@ export async function POST(request: NextRequest) {
             const bonusPoints = correctAnswers * 10;
             const pointsEarned = basePoints + bonusPoints;
 
-            // Create quiz attempt with transaction
+            // 2. Core Write Transaction (Minimal Scope)
+            const transactionStart = Date.now();
             const quizAttempt = await prisma.$transaction(async (tx) => {
                 // Create attempt record
-                // Create attempt record with answers JSON
                 const attempt = await tx.quizAttempt.create({
                     data: {
                         userId: decoded.userId,
@@ -101,8 +107,6 @@ export async function POST(request: NextRequest) {
                     },
                 });
 
-                // Removed QuizAttemptAnswer.createMany since we use JSONB now
-
                 // Award points
                 await tx.pointTransaction.create({
                     data: {
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest) {
                     },
                 });
 
-                // Update user total points
+                // Update user total points (Atomic)
                 await tx.user.update({
                     where: { id: decoded.userId },
                     data: { totalPoints: { increment: pointsEarned } },
@@ -123,9 +127,12 @@ export async function POST(request: NextRequest) {
 
                 return attempt;
             }, {
-                maxWait: 2000, // Wait max 2s for connection (Fail-fast)
-                timeout: 5000 // Transaction must finish in 5s
+                // Tuned Fail-Fast
+                maxWait: 1500, // Reject if pool is full for > 1.5s
+                timeout: 5000  // Fail if execution takes > 5s
             });
+
+            console.log(`[Submission] Success in ${Date.now() - startTime}ms (Tx: ${Date.now() - transactionStart}ms)`);
 
             return successResponse(
                 {
@@ -139,13 +146,18 @@ export async function POST(request: NextRequest) {
                 `Kuis selesai! Skor: ${score}%, +${pointsEarned} poin!`
             );
         } catch (error) {
+            console.error(`[Submission Error] Duration: ${Date.now() - startTime}ms`, error);
             if (error instanceof z.ZodError) {
                 return validationErrorResponse(error.format());
             }
             throw error;
         }
     } catch (error: any) {
-        console.error('Submit quiz attempt error:', error);
+        console.error('Submit quiz attempt fatal error:', error);
+        // P2028 is the Prisma Transaction API timeout code
+        if (error.code === 'P2028') {
+            return serverErrorResponse('Server sibuk (Transaction Timeout). Silakan coba 5 detik lagi.');
+        }
         return serverErrorResponse('Terjadi kesalahan saat submit kuis: ' + (error.message || error));
     }
 }
