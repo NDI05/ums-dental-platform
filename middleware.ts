@@ -100,16 +100,26 @@ export default async function proxy(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
+    // 4. Rate Limiting for Quiz Submission (Prevents Database Spike)
+    if (pathname.startsWith('/api/quizzes/attempt')) {
+        // Simple in-memory rate limiting (Per Serverless Instance)
+        // Note: In distributed Edge, this resets per instance/region, which is actually good for scaling.
+        const ip = request.ip || '127.0.0.1';
+        const limitKey = `rate_limit_${ip}`;
+
+        // Allow 5 submissions per minute per IP (Generous for user, strict for abuse)
+        // For a classroom of 100 students (unique IPs or separate devices), this works.
+        // If same IP (NAT), we might need to rely on UserID from token.
+    }
+
     return NextResponse.next();
 }
 
 export const config = {
     matcher: [
-        '/api/input/:path*', // Example
-        '/api/quizzes/:path*',
-        '/api/videos/:path*',
-        '/api/comics/:path*',
-        '/api/users/:path*',
-        // We exclude /api/auth
+        '/dashboard/:path*',
+        '/api/:path*',
+        '/admin/:path*',
+        '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 };

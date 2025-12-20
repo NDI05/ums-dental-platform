@@ -123,8 +123,8 @@ export async function POST(request: NextRequest) {
 
                 return attempt;
             }, {
-                maxWait: 5000, // Wait max 5s for connection
-                timeout: 10000 // Transaction must finish in 10s
+                maxWait: 2000, // Wait max 2s for connection (Fail-fast)
+                timeout: 5000 // Transaction must finish in 5s
             });
 
             return successResponse(
